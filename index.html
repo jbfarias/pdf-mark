@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Cite</title>
+    <base href="./" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+    <!-- PDF.js via CDN (stable) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css" integrity="sha512-tze+o/xG0w3yxxE8xe32piisVvI/LfcEuf6LW7lFLUxhio2SfFQ9mQ0TqB0avvonmxUXT7/l8+fnWkR03u85fQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  </head>
+  <body>
+    <div class="topbar" role="toolbar" aria-label="Barra de ações">
+      <label class="btn" for="pdfFileInput" aria-label="Abrir PDF">Abrir PDF</label>
+      <input id="pdfFileInput" type="file" accept="application/pdf" />
+
+      <label class="btn" for="txtImportInput" aria-label="Importar TXT">Importar TXT</label>
+      <input id="txtImportInput" type="file" accept="text/plain" />
+
+      <button id="exportBtn" class="btn" aria-label="Exportar TXT" title="Ctrl/Cmd+S">Exportar TXT</button>
+      <button id="clearBtn" class="btn btn-danger" aria-label="Limpar tudo">Limpar</button>
+      <span id="selectionCount" class="counter" aria-live="polite">0 seleções</span>
+      <span id="toast" class="toast" aria-live="polite" aria-atomic="true"></span>
+    </div>
+
+    <main class="layout">
+      <section class="pdf-col" aria-label="Documento PDF">
+        <div id="viewerContainer" class="viewerContainer">
+          <div id="viewer" class="pdfViewer"></div>
+        </div>
+      </section>
+      <aside class="side-col" aria-label="Painel de Seleções">
+        <h2>Seleções</h2>
+        <ul id="selectionList" class="selectionList" aria-label="Lista de seleções"></ul>
+      </aside>
+    </main>
+
+    <!-- PDF.js core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha512-q+4liFwdPC/bNdhUpZx6aXDx/h77yEQtn4I1slHydcbZK34nLaR3cAeYSJshoxIOq3mjEf7xJE8YWIUHMn+oCQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- PDF.js viewer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js" integrity="sha512-r/1hgDCXmxicFJ66QCjMCFl0dEhTBu7kYqoef3OrdHbqrnyhp1V/GhyWQg8Gto8412MUqU8AbMSpc5TLbRURhQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script src="app.js"></script>
+  </body>
+  </html>
