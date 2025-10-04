@@ -324,6 +324,10 @@ async function renderDocument(loadingTask) {
 
   // Listen seleção
   els.viewerContainer.addEventListener('mouseup', onMouseUpSelection);
+  // Mobile: seleção via toque
+  els.viewerContainer.addEventListener('touchend', onTouchEndSelection, { passive: true });
+  // Mobile: gestos de zoom
+  setupTouchZoomGestures();
 }
 
 function clamp(val, min, max) {
@@ -349,6 +353,67 @@ function zoomOut() {
 function zoomReset() {
   if (!state.pdfViewer) return;
   try { state.pdfViewer.currentScale = 1.0; } catch {}
+}
+
+// Mobile selection handler
+function onTouchEndSelection(e) {
+  // Após seleção por toque (long-press), tentar capturar como no mouseup
+  onMouseUpSelection(e);
+}
+
+// Touch gestures: pinch to zoom and double-tap zoom
+function setupTouchZoomGestures() {
+  let pinchActive = false;
+  let pinchStartDist = 0;
+  let pinchStartScale = 1;
+  let lastTapTime = 0;
+
+  function getDist(touches) {
+    if (!touches || touches.length < 2) return 0;
+    const x = touches[0].clientX - touches[1].clientX;
+    const y = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(x, y);
+  }
+
+  els.viewerContainer.addEventListener('touchstart', (e) => {
+    if (!state.pdfViewer) return;
+    if (e.touches.length === 2) {
+      pinchActive = true;
+      pinchStartDist = getDist(e.touches);
+      pinchStartScale = Number(state.pdfViewer.currentScale) || 1.0;
+    }
+  }, { passive: true });
+
+  els.viewerContainer.addEventListener('touchmove', (e) => {
+    if (!state.pdfViewer) return;
+    if (pinchActive && e.touches.length === 2) {
+      const dist = getDist(e.touches);
+      if (pinchStartDist > 0) {
+        const ratio = dist / pinchStartDist;
+        const next = clamp(pinchStartScale * ratio, 0.25, 5);
+        try { state.pdfViewer.currentScale = next; } catch {}
+      }
+    }
+  }, { passive: true });
+
+  els.viewerContainer.addEventListener('touchend', (e) => {
+    if (!state.pdfViewer) return;
+    // Encerrar pinch
+    if (pinchActive && e.touches.length < 2) {
+      pinchActive = false;
+      pinchStartDist = 0;
+    }
+    // Double-tap para zoom in
+    const now = Date.now();
+    if (e.changedTouches && e.changedTouches.length === 1) {
+      if (now - lastTapTime < 300) {
+        zoomIn();
+        lastTapTime = 0;
+      } else {
+        lastTapTime = now;
+      }
+    }
+  }, { passive: true });
 }
 
 function normalizeWhitespace(s) {
