@@ -62,6 +62,9 @@ input[type="file"] { position: absolute; left: -10000px; width: 1px; height: 1px
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 /* PDF.js default viewer class */
@@ -70,8 +73,21 @@ input[type="file"] { position: absolute; left: -10000px; width: 1px; height: 1px
 /* textLayer selection baseline */
 .textLayer {
   mix-blend-mode: multiply;
+  user-select: text;
+  -webkit-user-select: text;
+  -ms-user-select: text;
 }
+.textLayer span { user-select: text; -webkit-user-select: text; }
 .textLayer ::selection { background: rgba(58, 163, 255, 0.35); }
+
+/* Responsivo para mobile */
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .pdf-col { border-right: none; }
+  .side-col { border-top: 1px solid var(--outline); max-height: 40vh; }
+  .viewerContainer { bottom: 40vh; }
+  .btn { padding: 10px 14px; }
+}
 
 /* our highlight overlay */
 .highlight {
