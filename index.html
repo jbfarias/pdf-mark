@@ -12,16 +12,26 @@
   </head>
   <body>
     <div class="topbar" role="toolbar" aria-label="Barra de ações">
-      <label class="btn" for="pdfFileInput" aria-label="Abrir PDF">Abrir PDF</label>
-      <input id="pdfFileInput" type="file" accept="application/pdf" />
+      <div class="topbar-group left" role="group" aria-label="Arquivos">
+        <label class="btn btn-icon" for="pdfFileInput" aria-label="Abrir PDF" title="Abrir PDF">📂</label>
+        <input id="pdfFileInput" type="file" accept="application/pdf" />
 
-      <label class="btn" for="txtImportInput" aria-label="Importar TXT">Importar TXT</label>
-      <input id="txtImportInput" type="file" accept="text/plain" />
+        <label class="btn btn-icon" for="txtImportInput" aria-label="Importar TXT" title="Importar TXT">⬆️</label>
+        <input id="txtImportInput" type="file" accept="text/plain" />
+      </div>
 
-      <button id="exportBtn" class="btn" aria-label="Exportar TXT" title="Ctrl/Cmd+S">Exportar TXT</button>
-      <button id="clearBtn" class="btn btn-danger" aria-label="Limpar tudo">Limpar</button>
-      <span id="selectionCount" class="counter" aria-live="polite">0 seleções</span>
-      <span id="toast" class="toast" aria-live="polite" aria-atomic="true"></span>
+      <div class="topbar-group center zoom-controls" role="group" aria-label="Controles de zoom">
+        <button id="zoomOutBtn" class="btn btn-icon" aria-label="Diminuir zoom" title="Ctrl/Cmd+-">➖</button>
+        <button id="zoomInBtn" class="btn btn-icon" aria-label="Aumentar zoom" title="Ctrl/Cmd+=">➕</button>
+        <button id="zoomResetBtn" class="btn btn-icon" aria-label="Resetar zoom" title="Ctrl/Cmd+0">🔄</button>
+      </div>
+
+      <div class="topbar-group right" role="group" aria-label="Ações">
+        <button id="exportBtn" class="btn btn-icon" aria-label="Exportar TXT" title="Exportar TXT (Ctrl/Cmd+S)">⬇️</button>
+        <button id="clearBtn" class="btn btn-danger btn-icon" aria-label="Limpar tudo" title="Limpar">🗑️</button>
+        <span id="selectionCount" class="counter" aria-live="polite">0 seleções</span>
+        <span id="toast" class="toast" aria-live="polite" aria-atomic="true"></span>
+      </div>
     </div>
 
     <main class="layout">

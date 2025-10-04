@@ -13,8 +13,7 @@ const state = {
   activeSelectionId: null,
   autoSaveKey: 'pdf-cite-selections',
   currentPdfUrl: null,
-  listenersBound: false,
-  lastCaptureTs: 0,
+  pdfViewer: null,
 };
 
 const els = {
@@ -24,6 +23,9 @@ const els = {
   txtImportInput: document.getElementById('txtImportInput'),
   exportBtn: document.getElementById('exportBtn'),
   clearBtn: document.getElementById('clearBtn'),
+  zoomInBtn: document.getElementById('zoomInBtn'),
+  zoomOutBtn: document.getElementById('zoomOutBtn'),
+  zoomResetBtn: document.getElementById('zoomResetBtn'),
   selectionCount: document.getElementById('selectionCount'),
   selectionList: document.getElementById('selectionList'),
   toast: document.getElementById('toast'),
@@ -168,14 +170,18 @@ function renderSelectionList() {
     const actions = document.createElement('div');
     actions.className = 'actions';
     const goBtn = document.createElement('button');
-    goBtn.className = 'btn';
-    goBtn.textContent = 'Ir';
+    goBtn.className = 'btn btn-icon';
+    goBtn.textContent = '📍';
+    goBtn.setAttribute('aria-label', 'Ir para seleção');
+    goBtn.setAttribute('title', 'Ir para seleção');
     goBtn.addEventListener('click', () => {
       scrollToSelection(s);
     });
     const rmBtn = document.createElement('button');
-    rmBtn.className = 'btn btn-danger';
-    rmBtn.textContent = 'Remover';
+    rmBtn.className = 'btn btn-danger btn-icon';
+    rmBtn.textContent = '🗑️';
+    rmBtn.setAttribute('aria-label', 'Remover seleção');
+    rmBtn.setAttribute('title', 'Remover seleção');
     rmBtn.addEventListener('click', () => {
       removeSelectionById(s.id);
     });
@@ -286,6 +292,7 @@ async function renderDocument(loadingTask) {
     removePageBorders: false,
     maxCanvasPixels: 16777216,
   });
+  state.pdfViewer = pdfViewer;
   linkService.setViewer(pdfViewer);
   // Se disponível, usar loadingTask
   if (loadingTask) {
@@ -319,6 +326,31 @@ async function renderDocument(loadingTask) {
   els.viewerContainer.addEventListener('mouseup', onMouseUpSelection);
 }
 
+function clamp(val, min, max) {
+  return Math.min(max, Math.max(min, val));
+}
+
+function zoomIn() {
+  if (!state.pdfViewer) return;
+  const step = 0.1;
+  const cur = Number(state.pdfViewer.currentScale) || 1.0;
+  const next = clamp(cur + step, 0.25, 5);
+  try { state.pdfViewer.currentScale = next; } catch {}
+}
+
+function zoomOut() {
+  if (!state.pdfViewer) return;
+  const step = 0.1;
+  const cur = Number(state.pdfViewer.currentScale) || 1.0;
+  const next = clamp(cur - step, 0.25, 5);
+  try { state.pdfViewer.currentScale = next; } catch {}
+}
+
+function zoomReset() {
+  if (!state.pdfViewer) return;
+  try { state.pdfViewer.currentScale = 1.0; } catch {}
+}
+
 function normalizeWhitespace(s) {
   return (s || '').replace(/[\s\u00A0]+/g, ' ').trim();
 }
@@ -337,11 +369,10 @@ function buildPageTextWithSpaces(textContent) {
       const prevRight = prevX + (prev.width || 0);
       const gapX = curX - prevRight;
       const gapY = Math.abs(curY - prevY);
-      // Heurística levemente mais tolerante para mobile: linhas próximas e espaços menores
-      const sameLine = gapY < 2.0;
+      const sameLine = gapY < 1.0;
       if (!sameLine) {
         out += '\n';
-      } else if (gapX > 0.6) {
+      } else if (gapX > 0.8) {
         out += ' ';
       }
     }
@@ -456,52 +487,6 @@ function onMouseUpSelection(e) {
   showToast('Seleção salva');
 }
 
-// Suporte à seleção em mobile (touch/selectionchange)
-function isNodeInsideViewer(node) {
-  let cur = node;
-  while (cur) {
-    if (cur === els.viewerContainer) return true;
-    cur = cur.parentNode;
-  }
-  return false;
-}
-
-let selectionCaptureTimer = null;
-function tryCaptureSelection(trigger = '') {
-  const now = Date.now();
-  if (now - state.lastCaptureTs < 400) return; // evitar duplicatas próximas
-  const sel = window.getSelection();
-  if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
-  const range = sel.getRangeAt(0);
-  if (!isNodeInsideViewer(range.commonAncestorContainer)) return;
-  const info = getSelectionInfoFromRange(range);
-  if (!info) return;
-  try { sel.removeAllRanges(); } catch {}
-  const record = {
-    id: crypto.randomUUID(),
-    pageNumber: info.pageNumber,
-    quote: info.quote,
-    prefix: info.prefix,
-    suffix: info.suffix,
-    textPosition: info.textPosition,
-    createdAt: now,
-  };
-  state.selections.push(record);
-  renderSelectionList();
-  saveDraft();
-  showToast('Seleção salva');
-  state.lastCaptureTs = now;
-}
-
-function onSelectionChange() {
-  if (selectionCaptureTimer) clearTimeout(selectionCaptureTimer);
-  selectionCaptureTimer = setTimeout(() => tryCaptureSelection('selectionchange'), 120);
-}
-
-function onTouchEndSelection(e) {
-  setTimeout(() => tryCaptureSelection('touchend'), 80);
-}
-
 function renderAllHighlights(reanchor = false) {
   // Destaques visuais desativados: apenas remover overlays existentes
   document.querySelectorAll('.highlight').forEach((el) => el.remove());
@@ -521,6 +506,15 @@ document.addEventListener('keydown', (e) => {
   if (mod && e.key.toLowerCase() === 's') {
     e.preventDefault();
     exportTxt();
+  } else if (mod && (e.key === '+' || e.key === '=')) {
+    e.preventDefault();
+    zoomIn();
+  } else if (mod && (e.key === '-' || e.key === '_')) {
+    e.preventDefault();
+    zoomOut();
+  } else if (mod && (e.key === '0')) {
+    e.preventDefault();
+    zoomReset();
   } else if (e.key === 'Delete') {
     if (state.activeSelectionId) {
       removeSelectionById(state.activeSelectionId);
@@ -550,12 +544,9 @@ els.txtImportInput.addEventListener('change', (e) => {
   if (file) importTxtFile(file);
 });
 els.exportBtn.addEventListener('click', exportTxt);
-// Listeners globais para mobile
-if (!state.listenersBound) {
-  document.addEventListener('selectionchange', onSelectionChange, { passive: true });
-  els.viewerContainer.addEventListener('touchend', onTouchEndSelection, { passive: true });
-  state.listenersBound = true;
-}
 els.clearBtn.addEventListener('click', () => clearAll(true));
+if (els.zoomInBtn) els.zoomInBtn.addEventListener('click', zoomIn);
+if (els.zoomOutBtn) els.zoomOutBtn.addEventListener('click', zoomOut);
+if (els.zoomResetBtn) els.zoomResetBtn.addEventListener('click', zoomReset);
 
 // Inicialização: nada é renderizado até abrir PDF
